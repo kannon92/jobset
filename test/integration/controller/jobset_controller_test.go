@@ -86,7 +86,7 @@ var _ = ginkgo.Describe("JobSet validation", func() {
 			ctx := context.Background()
 
 			// Create JobSet.
-			ginkgo.By("creating jobset")
+			ginkgo.By(fmt.Sprintf("creating jobset in ns %s", ns.Name))
 			js := tc.makeJobSet(ns).Obj()
 
 			// If we are expected a validation error creating the jobset, end the test early.
@@ -215,7 +215,7 @@ var _ = ginkgo.Describe("JobSet controller", func() {
 			ctx := context.Background()
 
 			// Create JobSet.
-			ginkgo.By("creating jobset")
+			ginkgo.By(fmt.Sprintf("creating jobset in ns %s", ns.Name))
 			js := tc.makeJobSet(ns).Obj()
 
 			// Verify jobset created successfully.
@@ -557,7 +557,7 @@ func checkExpectedServices(js *jobset.JobSet) {
 // - one with 1 replica
 // - one with 3 replicas and DNS hostnames enabled
 func testJobSet(ns *corev1.Namespace) *testing.JobSetWrapper {
-	return testing.MakeJobSet("test-js", ns.Name).
+	return testing.MakeJobSet(ns.Name, ns.Name).
 		ReplicatedJob(testing.MakeReplicatedJob("replicated-job-a").
 			Job(testing.MakeJobTemplate("test-job-A", ns.Name).PodSpec(testing.TestPodSpec).Obj()).
 			Replicas(1).

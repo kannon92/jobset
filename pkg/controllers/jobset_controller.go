@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/pointer"
@@ -71,7 +72,7 @@ func NewJobSetReconciler(client client.Client, scheme *runtime.Scheme, record re
 	return &JobSetReconciler{Client: client, Scheme: scheme, Record: record}
 }
 
-//+kubebuilder:rbac:groups="",resources=events,verbs=create;watch;update
+//+kubebuilder:rbac:groups="",resources=events,verbs=create;watch;update;patch
 //+kubebuilder:rbac:groups=jobset.x-k8s.io,resources=jobsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=jobset.x-k8s.io,resources=jobsets/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=jobset.x-k8s.io,resources=jobsets/finalizers,verbs=update
@@ -238,7 +239,7 @@ func (r *JobSetReconciler) calculateAndUpdateReplicatedJobsStatuses(ctx context.
 		return nil
 	}
 	js.Status.ReplicatedJobsStatus = status
-	return r.Status().Update(ctx, js)
+	return r.updateStatus(ctx, js, corev1.EventTypeNormal, "ReplicatedStatus", "ReplicatedStatus Changed")
 }
 
 func (r *JobSetReconciler) calculateReplicatedJobStatuses(ctx context.Context, js *jobset.JobSet, jobs *childJobs) []jobset.ReplicatedJobStatus {
@@ -510,8 +511,17 @@ func (r *JobSetReconciler) deleteJobs(ctx context.Context, jobsForDeletion []*ba
 
 // updateStatus updates the status of a JobSet.
 func (r *JobSetReconciler) updateStatus(ctx context.Context, js *jobset.JobSet, eventType, eventReason, eventMsg string) error {
-	if err := r.Status().Update(ctx, js); err != nil {
-		return err
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var res jobset.JobSet
+		err := r.Get(ctx, types.NamespacedName{Name: js.Name, Namespace: js.Namespace}, &res)
+		if err != nil {
+			return err
+		}
+		res.Status = js.Status
+		return r.Status().Update(ctx, &res)
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update jobset status %w", err)
 	}
 	r.Record.Eventf(js, eventType, eventReason, eventMsg)
 	return nil
@@ -521,12 +531,7 @@ func (r *JobSetReconciler) ensureCondition(ctx context.Context, js *jobset.JobSe
 	if !updateCondition(js, condition) {
 		return nil
 	}
-	if err := r.Status().Update(ctx, js); err != nil {
-		return err
-	}
-
-	r.Record.Eventf(js, eventType, condition.Type, condition.Reason)
-	return nil
+	return r.updateStatus(ctx, js, eventType, condition.Reason, condition.Message)
 }
 
 func (r *JobSetReconciler) failJobSet(ctx context.Context, js *jobset.JobSet) error {

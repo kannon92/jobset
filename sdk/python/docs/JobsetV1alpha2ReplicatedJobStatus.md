@@ -1,4 +1,4 @@
-# JobsetV1alpha2ReplicatedJobStatus
+# Jobsetv1beta1ReplicatedJobStatus
 
 ReplicatedJobStatus defines the observed ReplicatedJobs Readiness.
 ## Properties

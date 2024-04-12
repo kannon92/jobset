@@ -1,4 +1,4 @@
-# JobsetV1alpha2StartupPolicy
+# Jobsetv1beta1StartupPolicy
 
 ## Properties
 Name | Type | Description | Notes

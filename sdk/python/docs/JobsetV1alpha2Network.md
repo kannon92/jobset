@@ -1,4 +1,4 @@
-# JobsetV1alpha2Network
+# Jobsetv1beta1Network
 
 ## Properties
 Name | Type | Description | Notes

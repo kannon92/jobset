@@ -1134,6 +1134,24 @@ var _ = ginkgo.Describe("JobSet controller", func() {
 				},
 			},
 		}),
+		ginkgo.Entry("elastic replicated jobs; upscale", &testCase{
+			makeJobSet: func(ns *corev1.Namespace) *testing.JobSetWrapper {
+				return testJobSet(ns)
+			},
+			updates: []*update{
+				{
+					jobSetUpdateFn: func(js *jobset.JobSet) {
+						setReplicasReplicatedJob(js, "replicated-job-a", 4)
+					},
+				},
+				{
+					checkJobCreation: func(js *jobset.JobSet) {
+						expectedStarts := 7
+						gomega.Eventually(testutil.NumJobs, timeout, interval).WithArguments(ctx, k8sClient, js).Should(gomega.Equal(expectedStarts))
+					},
+				},
+			},
+		}),
 	) // end of DescribeTable
 
 	ginkgo.When("A JobSet is managed by another controller", ginkgo.Ordered, func() {
@@ -1460,6 +1478,21 @@ func suspendJobSet(js *jobset.JobSet, suspend bool) {
 			return err
 		}
 		jsGet.Spec.Suspend = ptr.To(suspend)
+		return k8sClient.Update(ctx, &jsGet)
+	}, timeout, interval).Should(gomega.Succeed())
+}
+
+func setReplicasReplicatedJob(js *jobset.JobSet, replicatedJobName string, replicas int32) {
+	gomega.Eventually(func() error {
+		var jsGet jobset.JobSet
+		if err := k8sClient.Get(ctx, types.NamespacedName{Name: js.Name, Namespace: js.Namespace}, &jsGet); err != nil {
+			return err
+		}
+		for i, val := range jsGet.Spec.ReplicatedJobs {
+			if val.Name == replicatedJobName {
+				jsGet.Spec.ReplicatedJobs[i].Replicas = replicas
+			}
+		}
 		return k8sClient.Update(ctx, &jsGet)
 	}, timeout, interval).Should(gomega.Succeed())
 }

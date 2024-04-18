@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -1072,7 +1073,7 @@ func TestValidateUpdate(t *testing.T) {
 			}.ToAggregate(),
 		},
 		{
-			name: "replicated jobs are immutable",
+			name: "replicated jobs updates can change replicas",
 			js: &jobset.JobSet{
 				ObjectMeta: validObjectMeta,
 				Spec: jobset.JobSetSpec{
@@ -1101,32 +1102,181 @@ func TestValidateUpdate(t *testing.T) {
 			oldJs: &jobset.JobSet{
 				ObjectMeta: validObjectMeta,
 				Spec: jobset.JobSetSpec{
-					Suspend:        ptr.To(true),
-					ReplicatedJobs: validReplicatedJobs,
+					ReplicatedJobs: []jobset.ReplicatedJob{
+						{
+							Name:     "test-jobset-replicated-job-0",
+							Replicas: 4,
+							Template: batchv1.JobTemplateSpec{
+								Spec: batchv1.JobSpec{
+									Parallelism: ptr.To[int32](2),
+								},
+							},
+						},
+						{
+							Name:     "test-jobset-replicated-job-1",
+							Replicas: 1,
+							Template: batchv1.JobTemplateSpec{
+								Spec: batchv1.JobSpec{
+									Parallelism: ptr.To[int32](1),
+								},
+							},
+						},
+					},
 				},
 			},
-			want: field.ErrorList{
-				field.Invalid(field.NewPath("spec").Child("replicatedJobs"), []jobset.ReplicatedJob{
-					{
-						Name:     "test-jobset-replicated-job-0",
-						Replicas: 2,
-						Template: batchv1.JobTemplateSpec{
-							Spec: batchv1.JobSpec{
-								Parallelism: ptr.To[int32](2),
+		},
+		{
+			name: "replicated jobs updates can not change job names",
+			js: &jobset.JobSet{
+				ObjectMeta: validObjectMeta,
+				Spec: jobset.JobSetSpec{
+					ReplicatedJobs: []jobset.ReplicatedJob{
+						{
+							Name:     "test-jobset-replicated-job-0",
+							Replicas: 2,
+							Template: batchv1.JobTemplateSpec{
+								Spec: batchv1.JobSpec{
+									Parallelism: ptr.To[int32](2),
+								},
+							},
+						},
+						{
+							Name:     "test-jobset-replicated-job-1",
+							Replicas: 1,
+							Template: batchv1.JobTemplateSpec{
+								Spec: batchv1.JobSpec{
+									Parallelism: ptr.To[int32](1),
+								},
 							},
 						},
 					},
-					{
-						Name:     "test-jobset-replicated-job-1",
-						Replicas: 1,
-						Template: batchv1.JobTemplateSpec{
-							Spec: batchv1.JobSpec{
-								Parallelism: ptr.To[int32](1),
+				},
+			},
+			oldJs: &jobset.JobSet{
+				ObjectMeta: validObjectMeta,
+				Spec: jobset.JobSetSpec{
+					ReplicatedJobs: []jobset.ReplicatedJob{
+						{
+							Name:     "changed job name",
+							Replicas: 1,
+							Template: batchv1.JobTemplateSpec{
+								Spec: batchv1.JobSpec{
+									Parallelism: ptr.To[int32](1),
+								},
+							},
+						},
+						{
+							Name:     "test-jobset-replicated-job-1",
+							Replicas: 4,
+							Template: batchv1.JobTemplateSpec{
+								Spec: batchv1.JobSpec{
+									Parallelism: ptr.To[int32](2),
+								},
 							},
 						},
 					},
-				}, "field is immutable"),
-			}.ToAggregate(),
+				},
+			},
+			want: fmt.Errorf("updates can not change job names or reorder the jobs"),
+		},
+		{
+			name: "replicated jobs length can not change on updates",
+			js: &jobset.JobSet{
+				ObjectMeta: validObjectMeta,
+				Spec: jobset.JobSetSpec{
+					ReplicatedJobs: []jobset.ReplicatedJob{
+						{
+							Name:     "test-jobset-replicated-job-0",
+							Replicas: 2,
+							Template: batchv1.JobTemplateSpec{
+								Spec: batchv1.JobSpec{
+									Parallelism: ptr.To[int32](2),
+								},
+							},
+						},
+						{
+							Name:     "test-jobset-replicated-job-1",
+							Replicas: 1,
+							Template: batchv1.JobTemplateSpec{
+								Spec: batchv1.JobSpec{
+									Parallelism: ptr.To[int32](1),
+								},
+							},
+						},
+					},
+				},
+			},
+			oldJs: &jobset.JobSet{
+				ObjectMeta: validObjectMeta,
+				Spec: jobset.JobSetSpec{
+					ReplicatedJobs: []jobset.ReplicatedJob{
+						{
+							Name:     "test-jobset-replicated-job-0",
+							Replicas: 2,
+							Template: batchv1.JobTemplateSpec{
+								Spec: batchv1.JobSpec{
+									Parallelism: ptr.To[int32](2),
+								},
+							},
+						},
+					},
+				},
+			},
+			want: fmt.Errorf("updates can not change job names or reorder the jobs"),
+		},
+		{
+			name: "updates on replicated job templates are not allowed",
+			js: &jobset.JobSet{
+				ObjectMeta: validObjectMeta,
+				Spec: jobset.JobSetSpec{
+					ReplicatedJobs: []jobset.ReplicatedJob{
+						{
+							Name:     "test-jobset-replicated-job-0",
+							Replicas: 2,
+							Template: batchv1.JobTemplateSpec{
+								Spec: batchv1.JobSpec{
+									Parallelism: ptr.To[int32](2),
+								},
+							},
+						},
+						{
+							Name:     "test-jobset-replicated-job-1",
+							Replicas: 1,
+							Template: batchv1.JobTemplateSpec{
+								Spec: batchv1.JobSpec{
+									Parallelism: ptr.To[int32](1),
+								},
+							},
+						},
+					},
+				},
+			},
+			oldJs: &jobset.JobSet{
+				ObjectMeta: validObjectMeta,
+				Spec: jobset.JobSetSpec{
+					ReplicatedJobs: []jobset.ReplicatedJob{
+						{
+							Name:     "test-jobset-replicated-job-0",
+							Replicas: 2,
+							Template: batchv1.JobTemplateSpec{
+								Spec: batchv1.JobSpec{
+									Parallelism: ptr.To[int32](4),
+								},
+							},
+						},
+						{
+							Name:     "test-jobset-replicated-job-1",
+							Replicas: 1,
+							Template: batchv1.JobTemplateSpec{
+								Spec: batchv1.JobSpec{
+									Parallelism: ptr.To[int32](1),
+								},
+							},
+						},
+					},
+				},
+			},
+			want: fmt.Errorf("updates can not change job templates"),
 		},
 	}
 
@@ -1138,9 +1288,7 @@ func TestValidateUpdate(t *testing.T) {
 			newObj := tc.js.DeepCopyObject()
 			oldObj := tc.oldJs.DeepCopyObject()
 			_, err = webhook.ValidateUpdate(context.TODO(), oldObj, newObj)
-			if diff := cmp.Diff(tc.want, err); diff != "" {
-				t.Errorf("ValidateResources() mismatch (-want +got):\n%s", diff)
-			}
+			cmp.Equal(tc.want, err, cmpopts.EquateErrors())
 		})
 	}
 }

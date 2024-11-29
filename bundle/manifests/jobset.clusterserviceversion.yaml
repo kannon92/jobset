@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-    createdAt: "2024-11-29T16:40:33Z"
+    createdAt: "2024-11-29T18:09:47Z"
     operators.operatorframework.io/builder: operator-sdk-v1.37.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
   name: jobset.v0.0.1
@@ -182,7 +182,7 @@ spec:
                 - --leader-elect
                 command:
                 - /manager
-                image: quay.io/kevin-oss/kueue:bundle-test
+                image: quay.io/kevin-oss/jobset:test-bundle
                 livenessProbe:
                   httpGet:
                     path: /healthz

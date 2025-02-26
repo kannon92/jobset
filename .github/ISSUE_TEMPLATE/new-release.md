@@ -23,7 +23,7 @@ Please do not remove items from the checklist
 - [ ] An OWNER [prepares a draft release](https://github.com/kubernetes-sigs/jobset/releases)
   - [ ] Write the change log into the draft release.
   - [ ] Run
-      `make artifacts IMAGE_REGISTRY=registry.k8s.io/jobset GIT_TAG=$VERSION`
+      `make artifacts IMAGE_REGISTRY=registry.k8s.io GIT_TAG=$VERSION`
       to generate the artifacts and upload the files in the `artifacts` folder
       to the draft release.
 - [ ] An OWNER creates a signed tag running
@@ -31,14 +31,20 @@ Please do not remove items from the checklist
       and inserts the changelog into the tag description.
       To perform this step, you need [a PGP key registered on github](https://docs.github.com/en/authentication/managing-commit-signature-verification/checking-for-existing-gpg-keys).
 - [ ] An OWNER pushes the tag with
-      `git push $VERSION`
+      `git push origin $VERSION`
   - Triggers prow to build and publish a staging container image
-      `gcr.io/k8s-staging-jobset/jobset:$VERSION`
+      `us-central1-docker.pkg.dev/k8s-staging-images/jobset/jobset:$VERSION`
+  - Triggers prow to build and publish a staging helm chart
+      `us-central1-docker.pkg.dev/k8s-staging-images/charts/jobset:$VERSION
 - [ ] Submit a PR against [k8s.io](https://github.com/kubernetes/k8s.io), 
-      updating `k8s.gcr.io/images/k8s-staging-jobset/images.yaml` to
+      updating `registry.k8s.io/images/k8s-staging-jobset/images.yaml` to
       [promote the container images](https://github.com/kubernetes/k8s.io/tree/main/k8s.gcr.io#image-promoter)
       to production: <!-- example kubernetes/k8s.io#3612-->
-- [ ] Wait for the PR to be merged and verify that the image `registry.k8s.io/jobset/jobset:$VERSION` is available.
+- [ ] Submit a PR against [k8s.io](https://github.com/kubernetes/k8s.io), 
+      updating `registry.k8s.io/images/charts/images.yaml` to
+      [promote the helm charts](https://github.com/kubernetes/k8s.io/tree/main/k8s.gcr.io#image-promoter)
+      to production: <!-- example kubernetes/k8s.io#3612-->
+- [ ] Wait for the PR to be merged and verify that the image `registry.k8s.io/jobset:$VERSION` is available.
 - [ ] Publish the draft release prepared at the [Github releases page](https://github.com/kubernetes-sigs/jobset/releases).
 - [ ] Add a link to the tagged release in this issue: <!-- example https://github.com/kubernetes-sigs/jobset/releases/tag/v0.1.0 -->
 - [ ] Send an announcement email to `sig-apps@kubernetes.io`, `sig-scheduling@kubernetes.io` and `wg-batch@kubernetes.io` with the subject `[ANNOUNCE] JobSet $VERSION is released`

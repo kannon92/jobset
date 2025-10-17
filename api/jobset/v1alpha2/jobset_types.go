@@ -99,7 +99,6 @@ type JobSetSpec struct {
 	// +listType=map
 	// +listMapKey=name
 	ReplicatedJobs []ReplicatedJob `json:"replicatedJobs,omitempty"`
-
 	// network defines the networking options for the jobset.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable"
 	// +optional
@@ -111,19 +110,16 @@ type JobSetSpec struct {
 	// finished with status complete.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable"
 	SuccessPolicy *SuccessPolicy `json:"successPolicy,omitempty"`
-
 	// failurePolicy configures when to declare the JobSet as
 	// failed.
 	// The JobSet is always declared failed if any job in the set
 	// finished with status failed.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable"
 	FailurePolicy *FailurePolicy `json:"failurePolicy,omitempty"`
-
 	// startupPolicy configures in what order jobs must be started
 	// Deprecated: StartupPolicy is deprecated, please use the DependsOn API.
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable"
 	StartupPolicy *StartupPolicy `json:"startupPolicy,omitempty"`
-
 	// suspend suspends all running child Jobs when set to true.
 	Suspend *bool `json:"suspend,omitempty"` //nolint
 
@@ -148,7 +144,6 @@ type JobSetSpec struct {
 	// The field is immutable.
 	// +optional
 	ManagedBy *string `json:"managedBy,omitempty"`
-
 	// ttlSecondsAfterFinished limits the lifetime of a JobSet that has finished
 	// execution (either Complete or Failed). If this field is set,
 	// TTLSecondsAfterFinished after the JobSet finishes, it is eligible to be
@@ -168,50 +163,39 @@ type JobSetStatus struct {
 	// +listType=map
 	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-
 	// restarts tracks the number of times the JobSet has restarted (i.e. recreated in case of RecreateAll policy).
 	// +optional
 	Restarts int32 `json:"restarts"`
-
 	// restartsCountTowardsMax tracks the number of times the JobSet has restarted that counts towards the maximum allowed number of restarts.
 	// +optional
 	RestartsCountTowardsMax int32 `json:"restartsCountTowardsMax,omitempty"`
-
 	// terminalState the state of the JobSet when it finishes execution.
 	// It can be either Completed or Failed. Otherwise, it is empty by default.
 	// +optional
 	TerminalState string `json:"terminalState,omitempty"`
-
 	// replicatedJobsStatus track the number of JobsReady for each replicatedJob.
 	// +optional
 	// +listType=map
 	// +listMapKey=name
-	ReplicatedJobsStatus []ReplicatedJobStatus `json:"replicatedJobsStatus,omitempty"`
-}
+	ReplicatedJobsStatus []ReplicatedJobStatus `json:"replicatedJobsStatus,omitempty"`}
 
 // ReplicatedJobStatus defines the observed ReplicatedJobs Readiness.
 type ReplicatedJobStatus struct {
 	// name of the ReplicatedJob.
 	Name string `json:"name"`
-
 	// ready is the number of child Jobs where the number of ready pods and completed pods
 	// is greater than or equal to the total expected pod count for the Job (i.e., the minimum
 	// of job.spec.parallelism and job.spec.completions).
 	Ready int32 `json:"ready"`
-
 	// succeeded is the number of successfully completed child Jobs.
 	Succeeded int32 `json:"succeeded"`
-
 	// failed is the number of failed child Jobs.
 	Failed int32 `json:"failed"`
-
 	// active is the number of child Jobs with at least 1 pod in a running or pending state
 	// which are not marked for deletion.
 	Active int32 `json:"active"`
-
 	// suspended is the number of child Jobs which are in a suspended state.
-	Suspended int32 `json:"suspended"`
-}
+	Suspended int32 `json:"suspended"`}
 
 // +genclient
 // +k8s:openapi-gen=true
@@ -227,12 +211,9 @@ type ReplicatedJobStatus struct {
 type JobSet struct {
 	metav1.TypeMeta `json:",inline"`
 	// metadata is the object metadata for JobSet
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-	// spec is the specification for jobset
-	Spec JobSetSpec `json:"spec,omitempty"`
-	// status is the status of the jobset
-	Status JobSetStatus `json:"status,omitempty"`
-}
+	metav1.ObjectMeta `json:"metadata,omitempty"`	// spec is the specification for jobset
+	Spec JobSetSpec `json:"spec,omitempty"`	// status is the status of the jobset
+	Status JobSetStatus `json:"status,omitempty"`}
 
 // +kubebuilder:object:root=true
 // JobSetList contains a list of JobSet
@@ -246,19 +227,15 @@ type ReplicatedJob struct {
 	// name is the name of the entry and will be used as a suffix
 	// for the Job name.
 	Name string `json:"name"`
-
 	// groupName defines the name of the group this ReplicatedJob belongs to. Defaults to "default"
 	// +kubebuilder:default=default
 	GroupName string `json:"groupName,omitempty"`
-
 	// template defines the template of the Job that will be created.
 	Template batchv1.JobTemplateSpec `json:"template"`
-
 	// replicas is the number of jobs that will be created from this ReplicatedJob's template.
 	// Jobs names will be in the format: <jobSet.name>-<spec.replicatedJob.name>-<job-index>
 	// +kubebuilder:default=1
 	Replicas int32 `json:"replicas,omitempty"`
-
 	// dependsOn is an optional list that specifies the preceding ReplicatedJobs upon which
 	// the current ReplicatedJob depends. If specified, the ReplicatedJob will be created
 	// only after the referenced ReplicatedJobs reach their desired state.
@@ -280,11 +257,9 @@ type ReplicatedJob struct {
 type DependsOn struct {
 	// name of the previous ReplicatedJob.
 	Name string `json:"name"`
-
 	// status defines the condition for the ReplicatedJob. Only Ready or Complete status can be set.
 	// +kubebuilder:validation:Enum=Ready;Complete
-	Status DependsOnStatus `json:"status"`
-}
+	Status DependsOnStatus `json:"status"`}
 
 type DependsOnStatus string
 
@@ -310,7 +285,6 @@ type Network struct {
 	// Defaults to <jobSet.name> if not set.
 	// +optional
 	Subdomain string `json:"subdomain,omitempty"`
-
 	// publishNotReadyAddresses indicates if DNS records of pods should be published before the pods are ready.
 	// Defaults to True.
 	// +optional
@@ -353,17 +327,14 @@ type FailurePolicyRule struct {
 	// name of the failure policy rule.
 	// The name is defaulted to 'failurePolicyRuleN' where N is the index of the failure policy rule.
 	// The name must match the regular expression "^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$".
-	Name string `json:"name"`
-	// action to take if the rule is matched.
+	Name string `json:"name"`	// action to take if the rule is matched.
 	// +kubebuilder:validation:Enum:=FailJobSet;RestartJobSet;RestartJobSetAndIgnoreMaxRestarts
-	Action FailurePolicyAction `json:"action"`
-	// onJobFailureReasons is a list of job failures reasons.
+	Action FailurePolicyAction `json:"action"`	// onJobFailureReasons is a list of job failures reasons.
 	// The requirement is satisfied
 	// if at least one reason matches the list. An empty list matches any job
 	// failure reason.
 	// +kubebuilder:validation:UniqueItems:true
-	OnJobFailureReasons []string `json:"onJobFailureReasons,omitempty"`
-	// onJobFailureMessagePatterns is a requirement on the job failure messages.
+	OnJobFailureReasons []string `json:"onJobFailureReasons,omitempty"`	// onJobFailureMessagePatterns is a requirement on the job failure messages.
 	// The requirement is satisfied
 	// if at least one pattern (regex) matches the job failure message. An
 	// empty list matches any job failure message.
@@ -373,31 +344,26 @@ type FailurePolicyRule struct {
 	// except for \C. For an overview of the syntax, see
 	// https://pkg.go.dev/regexp/syntax.
 	// +kubebuilder:validation:UniqueItems:true
-	OnJobFailureMessagePatterns []string `json:"onJobFailureMessagePatterns,omitempty"`
-	// targetReplicatedJobs are the names of the replicated jobs the operator applies to.
+	OnJobFailureMessagePatterns []string `json:"onJobFailureMessagePatterns,omitempty"`	// targetReplicatedJobs are the names of the replicated jobs the operator applies to.
 	// An empty list will apply to all replicatedJobs.
 	// +optional
 	// +listType=atomic
-	TargetReplicatedJobs []string `json:"targetReplicatedJobs,omitempty"`
-}
+	TargetReplicatedJobs []string `json:"targetReplicatedJobs,omitempty"`}
 
 type FailurePolicy struct {
 	// maxRestarts defines the limit on the number of JobSet restarts.
 	// A restart is achieved by recreating all active child jobs.
 	MaxRestarts int32 `json:"maxRestarts,omitempty"`
-
 	// restartStrategy defines the strategy to use when restarting the JobSet.
 	// Defaults to Recreate.
 	// +optional
 	// +kubebuilder:default=Recreate
 	RestartStrategy JobSetRestartStrategy `json:"restartStrategy,omitempty"`
-
 	// rules is a list of failure policy rules for this JobSet.
 	// For a given Job failure, the rules will be evaluated in order,
 	// and only the first matching rule will be executed.
 	// If no matching rule is found, the RestartJobSet action is applied.
-	Rules []FailurePolicyRule `json:"rules,omitempty"`
-}
+	Rules []FailurePolicyRule `json:"rules,omitempty"`}
 
 // +kubebuilder:validation:Enum=Recreate;BlockingRecreate
 type JobSetRestartStrategy string
@@ -415,13 +381,11 @@ type SuccessPolicy struct {
 	// operator determines either All or Any of the selected jobs should succeed to consider the JobSet successful
 	// +kubebuilder:validation:Enum=All;Any
 	Operator Operator `json:"operator"`
-
 	// targetReplicatedJobs are the names of the replicated jobs the operator will apply to.
 	// A null or empty list will apply to all replicatedJobs.
 	// +optional
 	// +listType=atomic
-	TargetReplicatedJobs []string `json:"targetReplicatedJobs,omitempty"`
-}
+	TargetReplicatedJobs []string `json:"targetReplicatedJobs,omitempty"`}
 
 type StartupPolicyOptions string
 
@@ -441,22 +405,18 @@ type StartupPolicy struct {
 	// InOrder means to start them as they are listed in the JobSet. A ReplicatedJob is started only
 	// when all the jobs of the previous one are ready.
 	// +kubebuilder:validation:Enum=AnyOrder;InOrder
-	StartupPolicyOrder StartupPolicyOptions `json:"startupPolicyOrder"`
-}
+	StartupPolicyOrder StartupPolicyOptions `json:"startupPolicyOrder"`}
 
 // Coordinator defines which pod can be marked as the coordinator for the JobSet workload.
 type Coordinator struct {
 	// replicatedJob is the name of the ReplicatedJob which contains
 	// the coordinator pod.
 	ReplicatedJob string `json:"replicatedJob"`
-
 	// jobIndex is the index of Job which contains the coordinator pod
 	// (i.e., for a ReplicatedJob with N replicas, there are Job indexes 0 to N-1).
 	JobIndex int `json:"jobIndex,omitempty"`
-
 	// podIndex is the Job completion index of the coordinator pod.
-	PodIndex int `json:"podIndex,omitempty"`
-}
+	PodIndex int `json:"podIndex,omitempty"`}
 
 func init() {
 	SchemeBuilder.Register(&JobSet{}, &JobSetList{})

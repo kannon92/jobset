@@ -36,6 +36,12 @@ func (r *JobSetReconciler) reconcileGangPolicy(ctx context.Context, js *jobset.J
 		return r.deleteWorkloadIfExists(ctx, js)
 	}
 
+	// If JobSet is suspended, delete the workload if it exists.
+	// Suspended JobSets should not have workloads since they are not actively scheduling.
+	if jobSetSuspended(js) {
+		return r.deleteWorkloadIfExists(ctx, js)
+	}
+
 	// Check if workload already exists
 	workloadName := workload.GenWorkloadName(js)
 	var existingWorkload schedulingv1alpha1.Workload

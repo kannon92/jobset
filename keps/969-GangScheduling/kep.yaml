@@ -1,11 +1,11 @@
 title: Gang Scheduling Support for JobSet
 kep-number: 969
 authors:
-  - "@kehannon"
+  - "@kannon92"
 status: implementable
 creation-date: 2025-12-21
 reviewers:
-  - kannon92
+  - "@kannon92"
 approvers:
   - ahg-g
   - andrey

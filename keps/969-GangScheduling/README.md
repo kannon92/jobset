@@ -1,4 +1,4 @@
-# KEP-900: Gang Scheduling Support for JobSet
+# KEP-969: Gang Scheduling Support for JobSet
 
 <!-- toc -->
 - [Summary](#summary)
@@ -288,7 +288,7 @@ type GangPolicyOptions string
 
 const (
 	// JobSetAsGang means that the entire JobSet is considered to be a gang.
-	// The scheduler will schedule all pods in the JobSet atomically.
+	// The scheduler will admit all pods in the JobSet for scheduling together as a gang.
 	JobSetAsGang GangPolicyOptions = "JobSetAsGang"
 
 	// JobSetGangPerReplicatedJob means that each ReplicatedJob will be a separate gang.
@@ -313,7 +313,7 @@ type GangPolicy struct {
 	// When specified, the JobSet controller will create this Workload object
 	// and link it to the JobSet for gang scheduling.
 	// +optional
-	Workload *schedulingv1alpha.Workload `json:"workload,omitempty"`
+	Workload *schedulingv1alpha1.Workload `json:"workload,omitempty"`
 }
 
 // In JobSetSpec:
@@ -504,7 +504,7 @@ Integration tests will cover:
 
 ### Graduation Criteria
 
-**Alpha** (v0.6.0):
+**Alpha** (v0.11):
 - API field added with validation
 - Basic implementation for JobSetAsGang and JobSetGangPerReplicatedJob modes
 - Integration with Kueue scheduler

@@ -525,7 +525,7 @@ func TestGetPodGroupName(t *testing.T) {
 				},
 				Spec: jobset.JobSetSpec{
 					GangPolicy: &jobset.GangPolicy{
-						GangPolicyOption: nil,
+						Policy: nil,
 					},
 				},
 			},
@@ -540,7 +540,7 @@ func TestGetPodGroupName(t *testing.T) {
 				},
 				Spec: jobset.JobSetSpec{
 					GangPolicy: &jobset.GangPolicy{
-						GangPolicyOption: &jobSetAsGang,
+						Policy: &jobSetAsGang,
 					},
 				},
 			},
@@ -555,7 +555,7 @@ func TestGetPodGroupName(t *testing.T) {
 				},
 				Spec: jobset.JobSetSpec{
 					GangPolicy: &jobset.GangPolicy{
-						GangPolicyOption: &jobSetAsGang,
+						Policy: &jobSetAsGang,
 					},
 				},
 			},
@@ -570,7 +570,7 @@ func TestGetPodGroupName(t *testing.T) {
 				},
 				Spec: jobset.JobSetSpec{
 					GangPolicy: &jobset.GangPolicy{
-						GangPolicyOption: &jobSetGangPerReplicatedJob,
+						Policy: &jobSetGangPerReplicatedJob,
 					},
 				},
 			},
@@ -585,7 +585,7 @@ func TestGetPodGroupName(t *testing.T) {
 				},
 				Spec: jobset.JobSetSpec{
 					GangPolicy: &jobset.GangPolicy{
-						GangPolicyOption: &jobSetGangPerReplicatedJob,
+						Policy: &jobSetGangPerReplicatedJob,
 					},
 				},
 			},
@@ -600,7 +600,7 @@ func TestGetPodGroupName(t *testing.T) {
 				},
 				Spec: jobset.JobSetSpec{
 					GangPolicy: &jobset.GangPolicy{
-						GangPolicyOption: &jobSetWorkloadTemplate,
+						Policy: &jobSetWorkloadTemplate,
 						Workload: &schedulingv1alpha1.Workload{
 							Spec: schedulingv1alpha1.WorkloadSpec{
 								PodGroups: []schedulingv1alpha1.PodGroup{

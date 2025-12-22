@@ -6,7 +6,7 @@ spec:
   # Gang policy with custom workload template
   # This gives you full control over the Workload specification
   gangPolicy:
-    gangPolicyOption: JobSetWorkloadTemplate
+    policy: JobSetWorkloadTemplate
     workload:
       metadata:
         labels:

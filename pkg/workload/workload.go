@@ -158,11 +158,11 @@ func GenWorkloadName(js *jobset.JobSet) string {
 // For JobSetGangPerReplicatedJob, each ReplicatedJob has its own PodGroup.
 // For JobSetWorkloadTemplate, the user-specified PodGroup names are used (matching rjob.Name).
 func GetPodGroupName(js *jobset.JobSet, rjobName string) string {
-	if js.Spec.GangPolicy == nil || js.Spec.GangPolicy.GangPolicyOption == nil {
+	if js.Spec.GangPolicy == nil || js.Spec.GangPolicy.Policy == nil {
 		return ""
 	}
 
-	switch *js.Spec.GangPolicy.GangPolicyOption {
+	switch *js.Spec.GangPolicy.Policy {
 	case jobset.JobSetAsGang:
 		// All pods in the entire JobSet belong to a single PodGroup
 		return js.Name

@@ -1942,7 +1942,7 @@ func TestConstructJobWithWorkloadRef(t *testing.T) {
 			name: "JobSetAsGang - WorkloadRef with jobset name as podgroup",
 			js: testutils.MakeJobSet(jobSetName, ns).
 				GangPolicy(&jobset.GangPolicy{
-					GangPolicyOption: &jobSetAsGang,
+					Policy: &jobSetAsGang,
 				}).
 				ReplicatedJob(testutils.MakeReplicatedJob(replicatedJobName).
 					Job(testutils.MakeJobTemplate("job", ns).Obj()).
@@ -1957,7 +1957,7 @@ func TestConstructJobWithWorkloadRef(t *testing.T) {
 			name: "JobSetGangPerReplicatedJob - WorkloadRef with rjob name as podgroup",
 			js: testutils.MakeJobSet(jobSetName, ns).
 				GangPolicy(&jobset.GangPolicy{
-					GangPolicyOption: &jobSetGangPerReplicatedJob,
+					Policy: &jobSetGangPerReplicatedJob,
 				}).
 				ReplicatedJob(testutils.MakeReplicatedJob(replicatedJobName).
 					Job(testutils.MakeJobTemplate("job", ns).Obj()).
@@ -1972,7 +1972,7 @@ func TestConstructJobWithWorkloadRef(t *testing.T) {
 			name: "JobSetWorkloadTemplate - WorkloadRef with rjob name as podgroup",
 			js: testutils.MakeJobSet(jobSetName, ns).
 				GangPolicy(&jobset.GangPolicy{
-					GangPolicyOption: &jobSetWorkloadTemplate,
+					Policy: &jobSetWorkloadTemplate,
 				}).
 				ReplicatedJob(testutils.MakeReplicatedJob(replicatedJobName).
 					Job(testutils.MakeJobTemplate("job", ns).Obj()).
@@ -1987,7 +1987,7 @@ func TestConstructJobWithWorkloadRef(t *testing.T) {
 			name: "JobSetAsGang with multiple rjobs - all use same podgroup name",
 			js: testutils.MakeJobSet(jobSetName, ns).
 				GangPolicy(&jobset.GangPolicy{
-					GangPolicyOption: &jobSetAsGang,
+					Policy: &jobSetAsGang,
 				}).
 				ReplicatedJob(testutils.MakeReplicatedJob("leader").
 					Job(testutils.MakeJobTemplate("job", ns).Obj()).
@@ -2006,7 +2006,7 @@ func TestConstructJobWithWorkloadRef(t *testing.T) {
 			name: "JobSetGangPerReplicatedJob with multiple rjobs - each has own podgroup",
 			js: testutils.MakeJobSet(jobSetName, ns).
 				GangPolicy(&jobset.GangPolicy{
-					GangPolicyOption: &jobSetGangPerReplicatedJob,
+					Policy: &jobSetGangPerReplicatedJob,
 				}).
 				ReplicatedJob(testutils.MakeReplicatedJob("leader").
 					Job(testutils.MakeJobTemplate("job", ns).Obj()).

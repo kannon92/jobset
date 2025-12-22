@@ -440,16 +440,16 @@ func validateGangPolicy(gangPolicy *jobset.GangPolicy) []error {
 		return allErrs
 	}
 
-	// Validate that gangPolicyOption is set
-	if gangPolicy.GangPolicyOption == nil {
-		allErrs = append(allErrs, fmt.Errorf("gangPolicy.gangPolicyOption must be set"))
+	// Validate that policy is set
+	if gangPolicy.Policy == nil {
+		allErrs = append(allErrs, fmt.Errorf("gangPolicy.policy must be set"))
 		return allErrs
 	}
 
 	// Validate JobSetWorkloadTemplate requires workload spec
-	if *gangPolicy.GangPolicyOption == jobset.JobSetWorkloadTemplate {
+	if *gangPolicy.Policy == jobset.JobSetWorkloadTemplate {
 		if gangPolicy.Workload == nil {
-			allErrs = append(allErrs, fmt.Errorf("gangPolicy.workload must be set when gangPolicyOption is JobSetWorkloadTemplate"))
+			allErrs = append(allErrs, fmt.Errorf("gangPolicy.workload must be set when policy is JobSetWorkloadTemplate"))
 		} else {
 			// Validate workload spec if provided
 			if len(gangPolicy.Workload.Spec.PodGroups) == 0 {
@@ -468,9 +468,9 @@ func validateGangPolicy(gangPolicy *jobset.GangPolicy) []error {
 	}
 
 	// Validate JobSetAsGang should not have workload spec
-	if *gangPolicy.GangPolicyOption == jobset.JobSetAsGang {
+	if *gangPolicy.Policy == jobset.JobSetAsGang {
 		if gangPolicy.Workload != nil {
-			allErrs = append(allErrs, fmt.Errorf("gangPolicy.workload should not be set when gangPolicyOption is JobSetAsGang (it will be auto-generated)"))
+			allErrs = append(allErrs, fmt.Errorf("gangPolicy.workload should not be set when policy is JobSetAsGang (it will be auto-generated)"))
 		}
 	}
 

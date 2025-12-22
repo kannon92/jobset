@@ -59,22 +59,22 @@ func (r *JobSetReconciler) createWorkload(ctx context.Context, js *jobset.JobSet
 
 	var wl *schedulingv1alpha1.Workload
 
-	if js.Spec.GangPolicy.GangPolicyOption == nil {
-		return fmt.Errorf("gangPolicy.gangPolicyOption must be set")
+	if js.Spec.GangPolicy.Policy == nil {
+		return fmt.Errorf("gangPolicy.policy must be set")
 	}
 
-	switch *js.Spec.GangPolicy.GangPolicyOption {
+	switch *js.Spec.GangPolicy.Policy {
 	case jobset.JobSetAsGang:
 		wl = workload.ConstructWorkloadForJobSetAsGang(js)
 	case jobset.JobSetGangPerReplicatedJob:
 		wl = workload.ConstructWorkloadForJobSetGangPerReplicatedJob(js)
 	case jobset.JobSetWorkloadTemplate:
 		if js.Spec.GangPolicy.Workload == nil {
-			return fmt.Errorf("gangPolicy.workload must be set when gangPolicyOption is JobSetWorkloadTemplate")
+			return fmt.Errorf("gangPolicy.workload must be set when policy is JobSetWorkloadTemplate")
 		}
 		wl = workload.ConstructWorkloadFromTemplate(js)
 	default:
-		return fmt.Errorf("unknown gang policy option: %s", *js.Spec.GangPolicy.GangPolicyOption)
+		return fmt.Errorf("unknown gang policy option: %s", *js.Spec.GangPolicy.Policy)
 	}
 
 	// Set JobSet as owner for garbage collection

@@ -235,16 +235,16 @@ func schema_jobset_api_jobset_v1alpha2_GangPolicy(ref common.ReferenceCallback) 
 			SchemaProps: spec.SchemaProps{
 				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
-					"gangPolicyOption": {
+					"policy": {
 						SchemaProps: spec.SchemaProps{
-							Description: "gangPolicyOption determines the gang scheduling Policy for JobSet",
+							Description: "policy determines the gang scheduling Policy for JobSet",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"workload": {
 						SchemaProps: spec.SchemaProps{
-							Description: "workload will create a workload object on JobSet creation This will only be valid if gangPolicyOption is JobSetWorkloadTemplate",
+							Description: "workload will create a workload object on JobSet creation This will only be valid if policy is JobSetWorkloadTemplate",
 							Ref:         ref("k8s.io/api/scheduling/v1alpha1.Workload"),
 						},
 					},

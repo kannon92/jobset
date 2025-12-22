@@ -750,7 +750,7 @@ func constructJob(js *jobset.JobSet, rjob *jobset.ReplicatedJob, jobIdx int) *ba
 
 	// If gang policy is set and feature gate is enabled, add WorkloadRef to the pod template so that pods
 	// reference the Workload and PodGroup they belong to for gang scheduling.
-	if features.Enabled(features.JobSetGang) && js.Spec.GangPolicy != nil && js.Spec.GangPolicy.GangPolicyOption != nil {
+	if features.Enabled(features.JobSetGang) && js.Spec.GangPolicy != nil && js.Spec.GangPolicy.Policy != nil {
 		job.Spec.Template.Spec.WorkloadRef = &corev1.WorkloadReference{
 			Name:     workload.GenWorkloadName(js),
 			PodGroup: workload.GetPodGroupName(js, rjob.Name),

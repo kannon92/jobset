@@ -27,9 +27,9 @@ class JobsetV1alpha2GangPolicy(BaseModel):
     """
     JobsetV1alpha2GangPolicy
     """ # noqa: E501
-    gang_policy_option: Optional[StrictStr] = Field(default=None, description="gangPolicyOption determines the gang scheduling Policy for JobSet", alias="gangPolicyOption")
+    policy: Optional[StrictStr] = Field(default=None, description="policy determines the gang scheduling Policy for JobSet")
     workload: Optional[IoK8sApiSchedulingV1alpha1Workload] = None
-    __properties: ClassVar[List[str]] = ["gangPolicyOption", "workload"]
+    __properties: ClassVar[List[str]] = ["policy", "workload"]
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -85,7 +85,7 @@ class JobsetV1alpha2GangPolicy(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "gangPolicyOption": obj.get("gangPolicyOption"),
+            "policy": obj.get("policy"),
             "workload": IoK8sApiSchedulingV1alpha1Workload.from_dict(obj["workload"]) if obj.get("workload") is not None else None
         })
         return _obj

@@ -457,6 +457,7 @@ const (
 	// Scheduler will schedule JobSet as a gang
 	JobSetAsGang GangPolicyOptions = "JobSetAsGang"
 	// JobSetGangPerReplicatedJob means that each replicated job will be a separate gang
+	// Workloads are limited to only 8 pod groups
 	JobSetGangPerReplicatedJob GangPolicyOptions = "JobSetGangPerReplicatedJob"
 	// JobSetWorkloadTemplate means that the JobSet will create the WorkloadTemplate upon creation
 	// This is an advanced option that can provide more fine grain control over the pod groups
@@ -465,13 +466,13 @@ const (
 )
 
 type GangPolicy struct {
-	// gangPolicyOption determines the gang scheduling Policy for JobSet
+	// policy determines the gang scheduling Policy for JobSet
 	// +kubebuilder:validation:Enum=JobSetAsGang;JobSetGangPerReplicatedJob;JobSetWorkloadTemplate
 	// +optional
-	GangPolicyOption *GangPolicyOptions `json:"gangPolicyOption,omitempty"`
+	Policy *GangPolicyOptions `json:"policy,omitempty"`
 
 	// workload will create a workload object on JobSet creation
-	// This will only be valid if gangPolicyOption is JobSetWorkloadTemplate
+	// This will only be valid if policy is JobSetWorkloadTemplate
 	// +optional
 	Workload *schedulingv1alpha.Workload `json:"workload,omitempty"`
 }

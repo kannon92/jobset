@@ -567,7 +567,7 @@ var _ = ginkgo.Describe("jobset webhook defaulting", func() {
 							CompletionMode(batchv1.IndexedCompletion).Obj()).
 						Obj()).
 					GangPolicy(&jobset.GangPolicy{
-						GangPolicyOption: ptr.To(jobset.JobSetAsGang),
+						Policy: ptr.To(jobset.JobSetAsGang),
 					})
 			},
 			jobSetCreationShouldFail: false,
@@ -582,7 +582,7 @@ var _ = ginkgo.Describe("jobset webhook defaulting", func() {
 							CompletionMode(batchv1.IndexedCompletion).Obj()).
 						Obj()).
 					GangPolicy(&jobset.GangPolicy{
-						GangPolicyOption: ptr.To(jobset.JobSetGangPerReplicatedJob),
+						Policy: ptr.To(jobset.JobSetGangPerReplicatedJob),
 					})
 			},
 			jobSetCreationShouldFail: false,
@@ -597,7 +597,7 @@ var _ = ginkgo.Describe("jobset webhook defaulting", func() {
 							CompletionMode(batchv1.IndexedCompletion).Obj()).
 						Obj()).
 					GangPolicy(&jobset.GangPolicy{
-						GangPolicyOption: ptr.To(jobset.JobSetWorkloadTemplate),
+						Policy: ptr.To(jobset.JobSetWorkloadTemplate),
 						Workload: &schedulingv1alpha1.Workload{
 							Spec: schedulingv1alpha1.WorkloadSpec{
 								PodGroups: []schedulingv1alpha1.PodGroup{
@@ -616,7 +616,7 @@ var _ = ginkgo.Describe("jobset webhook defaulting", func() {
 			},
 			jobSetCreationShouldFail: false,
 		}),
-		ginkgo.Entry("gang policy without gangPolicyOption should be rejected", &testCase{
+		ginkgo.Entry("gang policy without policy should be rejected", &testCase{
 			makeJobSet: func(ns *corev1.Namespace) *testing.JobSetWrapper {
 				return testing.MakeJobSet("gang-no-option", ns.Name).
 					EnableDNSHostnames(true).
@@ -639,7 +639,7 @@ var _ = ginkgo.Describe("jobset webhook defaulting", func() {
 							CompletionMode(batchv1.IndexedCompletion).Obj()).
 						Obj()).
 					GangPolicy(&jobset.GangPolicy{
-						GangPolicyOption: ptr.To(jobset.JobSetWorkloadTemplate),
+						Policy: ptr.To(jobset.JobSetWorkloadTemplate),
 					})
 			},
 			jobSetCreationShouldFail: true,
@@ -654,7 +654,7 @@ var _ = ginkgo.Describe("jobset webhook defaulting", func() {
 							CompletionMode(batchv1.IndexedCompletion).Obj()).
 						Obj()).
 					GangPolicy(&jobset.GangPolicy{
-						GangPolicyOption: ptr.To(jobset.JobSetWorkloadTemplate),
+						Policy: ptr.To(jobset.JobSetWorkloadTemplate),
 						Workload: &schedulingv1alpha1.Workload{
 							Spec: schedulingv1alpha1.WorkloadSpec{
 								PodGroups: []schedulingv1alpha1.PodGroup{},
@@ -674,7 +674,7 @@ var _ = ginkgo.Describe("jobset webhook defaulting", func() {
 							CompletionMode(batchv1.IndexedCompletion).Obj()).
 						Obj()).
 					GangPolicy(&jobset.GangPolicy{
-						GangPolicyOption: ptr.To(jobset.JobSetWorkloadTemplate),
+						Policy: ptr.To(jobset.JobSetWorkloadTemplate),
 						Workload: &schedulingv1alpha1.Workload{
 							Spec: schedulingv1alpha1.WorkloadSpec{
 								PodGroups: []schedulingv1alpha1.PodGroup{
@@ -703,7 +703,7 @@ var _ = ginkgo.Describe("jobset webhook defaulting", func() {
 							CompletionMode(batchv1.IndexedCompletion).Obj()).
 						Obj()).
 					GangPolicy(&jobset.GangPolicy{
-						GangPolicyOption: ptr.To(jobset.JobSetAsGang),
+						Policy: ptr.To(jobset.JobSetAsGang),
 						Workload: &schedulingv1alpha1.Workload{
 							Spec: schedulingv1alpha1.WorkloadSpec{
 								PodGroups: []schedulingv1alpha1.PodGroup{

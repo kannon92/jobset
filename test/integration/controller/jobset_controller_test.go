@@ -3091,7 +3091,7 @@ var _ = ginkgo.Describe("Gang scheduling", func() {
 					Replicas(1).
 					Obj()).
 				GangPolicy(&jobset.GangPolicy{
-					GangPolicyOption: ptr.To(jobset.JobSetAsGang),
+					Policy: ptr.To(jobset.JobSetAsGang),
 				}).
 				Obj()
 
@@ -3160,7 +3160,7 @@ var _ = ginkgo.Describe("Gang scheduling", func() {
 					Replicas(1).
 					Obj()).
 				GangPolicy(&jobset.GangPolicy{
-					GangPolicyOption: ptr.To(jobset.JobSetGangPerReplicatedJob),
+					Policy: ptr.To(jobset.JobSetGangPerReplicatedJob),
 				}).
 				Obj()
 
@@ -3230,7 +3230,7 @@ var _ = ginkgo.Describe("Gang scheduling", func() {
 					Replicas(2).
 					Obj()).
 				GangPolicy(&jobset.GangPolicy{
-					GangPolicyOption: ptr.To(jobset.JobSetWorkloadTemplate),
+					Policy: ptr.To(jobset.JobSetWorkloadTemplate),
 					Workload: &schedulingv1alpha1.Workload{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
@@ -3357,7 +3357,7 @@ var _ = ginkgo.Describe("Gang scheduling", func() {
 					Replicas(2).
 					Obj()).
 				GangPolicy(&jobset.GangPolicy{
-					GangPolicyOption: ptr.To(jobset.JobSetAsGang),
+					Policy: ptr.To(jobset.JobSetAsGang),
 				}).
 				Obj()
 
@@ -3419,7 +3419,7 @@ var _ = ginkgo.Describe("Gang scheduling", func() {
 					Replicas(2).
 					Obj()).
 				GangPolicy(&jobset.GangPolicy{
-					GangPolicyOption: ptr.To(jobset.JobSetAsGang),
+					Policy: ptr.To(jobset.JobSetAsGang),
 				}).
 				Obj()
 

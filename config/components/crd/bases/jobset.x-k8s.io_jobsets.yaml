@@ -176,9 +176,9 @@ spec:
               gangPolicy:
                 description: gangPolicy configures gang scheduling policy
                 properties:
-                  gangPolicyOption:
-                    description: gangPolicyOption determines the gang scheduling Policy
-                      for JobSet
+                  policy:
+                    description: policy determines the gang scheduling Policy for
+                      JobSet
                     enum:
                     - JobSetAsGang
                     - JobSetGangPerReplicatedJob
@@ -187,7 +187,7 @@ spec:
                   workload:
                     description: |-
                       workload will create a workload object on JobSet creation
-                      This will only be valid if gangPolicyOption is JobSetWorkloadTemplate
+                      This will only be valid if policy is JobSetWorkloadTemplate
                     properties:
                       apiVersion:
                         description: |-

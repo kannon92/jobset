@@ -35,7 +35,7 @@ class TestJobsetV1alpha2GangPolicy(unittest.TestCase):
         model = JobsetV1alpha2GangPolicy()
         if include_optional:
             return JobsetV1alpha2GangPolicy(
-                gang_policy_option = '',
+                policy = '',
                 workload = jobset.models.io/k8s/api/scheduling/v1alpha1/workload.io.k8s.api.scheduling.v1alpha1.Workload(
                     api_version = '', 
                     kind = '', 

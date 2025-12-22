@@ -22,10 +22,10 @@ import (
 // GangPolicyApplyConfiguration represents a declarative configuration of the GangPolicy type for use
 // with apply.
 type GangPolicyApplyConfiguration struct {
-	// gangPolicyOption determines the gang scheduling Policy for JobSet
-	GangPolicyOption *jobsetv1alpha2.GangPolicyOptions `json:"gangPolicyOption,omitempty"`
+	// policy determines the gang scheduling Policy for JobSet
+	Policy *jobsetv1alpha2.GangPolicyOptions `json:"policy,omitempty"`
 	// workload will create a workload object on JobSet creation
-	// This will only be valid if gangPolicyOption is JobSetWorkloadTemplate
+	// This will only be valid if policy is JobSetWorkloadTemplate
 	Workload *v1alpha1.Workload `json:"workload,omitempty"`
 }
 
@@ -35,11 +35,11 @@ func GangPolicy() *GangPolicyApplyConfiguration {
 	return &GangPolicyApplyConfiguration{}
 }
 
-// WithGangPolicyOption sets the GangPolicyOption field in the declarative configuration to the given value
+// WithPolicy sets the Policy field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the GangPolicyOption field is set to the value of the last call.
-func (b *GangPolicyApplyConfiguration) WithGangPolicyOption(value jobsetv1alpha2.GangPolicyOptions) *GangPolicyApplyConfiguration {
-	b.GangPolicyOption = &value
+// If called multiple times, the Policy field is set to the value of the last call.
+func (b *GangPolicyApplyConfiguration) WithPolicy(value jobsetv1alpha2.GangPolicyOptions) *GangPolicyApplyConfiguration {
+	b.Policy = &value
 	return b
 }
 

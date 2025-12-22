@@ -102,7 +102,7 @@ class TestJobsetV1alpha2JobSetList(unittest.TestCase):
                                             ], )
                                     ], ), 
                             gang_policy = jobset.models.jobset_v1alpha2_gang_policy.JobsetV1alpha2GangPolicy(
-                                gang_policy_option = '', 
+                                policy = '', 
                                 workload = jobset.models.io/k8s/api/scheduling/v1alpha1/workload.io.k8s.api.scheduling.v1alpha1.Workload(
                                     api_version = '', 
                                     kind = '', 
@@ -240,7 +240,7 @@ class TestJobsetV1alpha2JobSetList(unittest.TestCase):
                                             ], )
                                     ], ), 
                             gang_policy = jobset.models.jobset_v1alpha2_gang_policy.JobsetV1alpha2GangPolicy(
-                                gang_policy_option = '', 
+                                policy = '', 
                                 workload = jobset.models.io/k8s/api/scheduling/v1alpha1/workload.io.k8s.api.scheduling.v1alpha1.Workload(
                                     api_version = '', 
                                     kind = '', 

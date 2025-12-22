@@ -6,7 +6,7 @@ spec:
   # Gang policy configuration - automatically creates a Workload resource
   # for gang scheduling across all pods in the JobSet
   gangPolicy:
-    gangPolicyOption: JobSetAsGang
+    policy: JobSetAsGang
 
   # Failure policy
   failurePolicy:

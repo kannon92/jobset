@@ -601,7 +601,3 @@ const (
 	// PVC associated with JobSet VolumeClaimTemplates will not be deleted.
 	RetentionPolicyRetain RetentionPolicyType = "Retain"
 )
-
-func init() {
-	SchemeBuilder.Register(&JobSet{}, &JobSetList{})
-}

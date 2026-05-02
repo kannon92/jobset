@@ -1424,6 +1424,12 @@ var _ = ginkgo.Describe("JobSet controller", func() {
 					checkJobSetCondition: testutil.JobSetSuspended,
 				},
 				{
+					// K8s 1.36+ requires the Suspended condition to be set on Jobs
+					// before pod template fields can be modified (MutableSchedulingDirectivesForSuspendedJobs).
+					// Simulate kube-controller-manager Job controller behavior since envtest doesn't run it.
+					jobUpdateFn: setJobsSuspendedCondition,
+				},
+				{
 					jobSetUpdateFn: func(js *jobset.JobSet) {
 						updatePodTemplates(js, podTemplateUpdates)
 					},
@@ -3389,6 +3395,20 @@ func numExpectedServices(js *jobset.JobSet) int {
 		expected = 1
 	}
 	return expected
+}
+
+func setJobsSuspendedCondition(jobList *batchv1.JobList) {
+	ginkgo.By("setting Suspended condition on all jobs")
+	for _, job := range jobList.Items {
+		updateJobStatus(&job, batchv1.JobStatus{
+			Conditions: []batchv1.JobCondition{
+				{
+					Type:   batchv1.JobSuspended,
+					Status: corev1.ConditionTrue,
+				},
+			},
+		})
+	}
 }
 
 func completeAllJobs(jobList *batchv1.JobList) {

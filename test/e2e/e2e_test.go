@@ -560,12 +560,12 @@ var _ = ginkgo.Describe("JobSet", func() {
 			generation := jobSet.Generation
 
 			ginkgo.By("Re-applying the same JobSet apply configuration once")
-			// Re-apply the original apply configuration
+			jobSetConfig = serverSideApplyTestJobSet(ns, "test")
 			gomega.Expect(k8sClient.Apply(ctx, jobSetConfig, client.ForceOwnership, fieldManagerName)).
 				To(gomega.Succeed())
 
 			ginkgo.By("Re-applying the same JobSet apply configuration twice")
-			// Re-apply the original apply configuration
+			jobSetConfig = serverSideApplyTestJobSet(ns, "test")
 			gomega.Expect(k8sClient.Apply(ctx, jobSetConfig, client.ForceOwnership, fieldManagerName)).
 				To(gomega.Succeed())
 

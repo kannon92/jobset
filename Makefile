@@ -408,7 +408,7 @@ ginkgo: ## Download ginkgo locally if necessary.
 KIND = $(shell pwd)/bin/kind
 .PHONY: kind
 kind:
-	@GOBIN=$(PROJECT_DIR)/bin GO111MODULE=on $(GO_CMD) install sigs.k8s.io/kind@v0.29.0
+	@GOBIN=$(PROJECT_DIR)/bin GO111MODULE=on $(GO_CMD) install sigs.k8s.io/kind@main
 
 .PHONY: kind-image-build
 kind-image-build: PLATFORMS=linux/amd64
@@ -427,6 +427,35 @@ test-e2e-kind: manifests kustomize fmt vet envtest ginkgo kind-image-build
 .PHONY: test-e2e-kind-customconfigs
 test-e2e-kind-customconfigs: E2E_TEST_PATH = ./test/e2e/customconfigs/...
 test-e2e-kind-customconfigs: test-e2e-kind
+
+## WAS (Workload-Aware Scheduling) Kind cluster management
+# WAS targets build a Kind node image from Kubernetes main (latest CI build)
+# to ensure scheduling.k8s.io APIs are available.
+WAS_KIND_CLUSTER_NAME ?= was-test
+K8S_MAIN_NODE_IMAGE ?= k8s-main:latest
+
+.PHONY: setup-vendor
+setup-vendor: ## Setup vendor directory with scheduling/v1alpha3 types from k8s main.
+	./hack/setup-vendor.sh
+
+.PHONY: kind-k8s-main-image-build
+kind-k8s-main-image-build: kind ## Build a Kind node image from Kubernetes main (latest CI build).
+	KIND=$(KIND) K8S_MAIN_NODE_IMAGE=$(K8S_MAIN_NODE_IMAGE) \
+	bash -c 'source ./hack/e2e-scheduling-cluster.sh && build_scheduling_node_image'
+
+.PHONY: test-e2e-kind-scheduling
+test-e2e-kind-scheduling: manifests kustomize fmt vet envtest ginkgo kind-image-build kind-k8s-main-image-build ## Run scheduling-specific E2E tests on Kind with WAS feature gates enabled.
+	K8S_MAIN_NODE_IMAGE=$(K8S_MAIN_NODE_IMAGE) KIND_CLUSTER_NAME=$(KIND_CLUSTER_NAME) USE_EXISTING_CLUSTER=$(USE_EXISTING_CLUSTER) ARTIFACTS=$(ARTIFACTS) IMAGE_TAG=$(IMAGE_TAG) ./hack/e2e-scheduling-test.sh
+
+.PHONY: kind-cluster-scheduling
+kind-cluster-scheduling: kustomize kind-image-build ## Create a Kind cluster with WAS feature gates and deploy JobSet.
+	KIND=$(KIND) KUSTOMIZE=$(KUSTOMIZE) KIND_CLUSTER_NAME=$(WAS_KIND_CLUSTER_NAME) K8S_MAIN_NODE_IMAGE=$(K8S_MAIN_NODE_IMAGE) IMAGE_TAG=$(IMAGE_TAG) ARTIFACTS=$(ARTIFACTS) \
+	bash -c 'source ./hack/e2e-scheduling-cluster.sh && build_scheduling_node_image && create_scheduling_cluster && kind_load_image && deploy_scheduling_jobset && verify_scheduling_apis'
+
+.PHONY: kind-cluster-scheduling-delete
+kind-cluster-scheduling-delete: kind ## Delete the WAS Kind cluster and collect logs.
+	KIND=$(KIND) KIND_CLUSTER_NAME=$(WAS_KIND_CLUSTER_NAME) ARTIFACTS=$(ARTIFACTS) \
+	bash -c 'source ./hack/e2e-scheduling-cluster.sh && delete_scheduling_cluster'
 
 .PHONY: prometheus
 prometheus:

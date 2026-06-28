@@ -157,6 +157,28 @@ class TestJobsetV1alpha2JobSetSpec(unittest.TestCase):
                                 template = jobset.models.io/k8s/api/core/v1/pod_template_spec.io.k8s.api.core.v1.PodTemplateSpec(), 
                                 ttl_seconds_after_finished = 56, ), ), )
                     ],
+                scheduling = jobset.models.jobset_v1alpha2_job_set_scheduling.JobsetV1alpha2JobSetScheduling(
+                    constraints = jobset.models.io/k8s/api/scheduling/v1alpha2/pod_group_scheduling_constraints.io.k8s.api.scheduling.v1alpha2.PodGroupSchedulingConstraints(
+                        topology = [
+                            jobset.models.io/k8s/api/scheduling/v1alpha2/topology_constraint.io.k8s.api.scheduling.v1alpha2.TopologyConstraint(
+                                key = '', )
+                            ], ), 
+                    disruption = '', 
+                    policy = jobset.models.io/k8s/api/scheduling/v1alpha2/pod_group_scheduling_policy.io.k8s.api.scheduling.v1alpha2.PodGroupSchedulingPolicy(
+                        basic = jobset.models.io/k8s/api/scheduling/v1alpha2/basic_scheduling_policy.io.k8s.api.scheduling.v1alpha2.BasicSchedulingPolicy(), 
+                        gang = jobset.models.io/k8s/api/scheduling/v1alpha2/gang_scheduling_policy.io.k8s.api.scheduling.v1alpha2.GangSchedulingPolicy(
+                            min_count = 56, ), ), 
+                    replicated_job_policies = [
+                        jobset.models.jobset_v1alpha2_replicated_job_scheduling_policy.JobsetV1alpha2ReplicatedJobSchedulingPolicy(
+                            disruption = '', 
+                            resource_claims = [
+                                jobset.models.io/k8s/api/scheduling/v1alpha2/pod_group_resource_claim.io.k8s.api.scheduling.v1alpha2.PodGroupResourceClaim(
+                                    name = '', 
+                                    resource_claim_name = '', 
+                                    resource_claim_template_name = '', )
+                                ], 
+                            target_replicated_job = '', )
+                        ], ),
                 startup_policy = jobset.models.jobset_v1alpha2_startup_policy.JobsetV1alpha2StartupPolicy(
                     startup_policy_order = '', ),
                 success_policy = jobset.models.jobset_v1alpha2_success_policy.JobsetV1alpha2SuccessPolicy(

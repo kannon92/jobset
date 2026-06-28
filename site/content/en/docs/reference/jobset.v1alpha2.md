@@ -282,6 +282,57 @@ An empty list will apply to all replicatedJobs.</p>
 
 
 
+## `JobSetScheduling`     {#jobset-x-k8s-io-v1alpha2-JobSetScheduling}
+    
+
+**Appears in:**
+
+- [JobSetSpec](#jobset-x-k8s-io-v1alpha2-JobSetSpec)
+
+
+<p>JobSetScheduling defines the Workload-Aware Scheduling configuration for a JobSet.
+All scheduling directives (both global and per-ReplicatedJob) are declared centrally
+in this struct. Per-ReplicatedJob overrides use the targetReplicatedJob pattern.</p>
+
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr><td><code>policy</code><br/>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#podgroupschedulingpolicy-v1alpha3-scheduling"><code>k8s.io/api/scheduling/v1alpha3.PodGroupSchedulingPolicy</code></a>
+</td>
+<td>
+   <p>policy defines the composite-level scheduling policy for the entire JobSet.
+Defaults to Gang when spec.scheduling is set but policy is nil.</p>
+</td>
+</tr>
+<tr><td><code>constraints</code><br/>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#podgroupschedulingconstraints-v1alpha3-scheduling"><code>k8s.io/api/scheduling/v1alpha3.PodGroupSchedulingConstraints</code></a>
+</td>
+<td>
+   <p>constraints defines composite-level topology constraints for the entire JobSet.</p>
+</td>
+</tr>
+<tr><td><code>disruption</code><br/>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#disruptionmode-v1alpha3-scheduling"><code>k8s.io/api/scheduling/v1alpha3.DisruptionMode</code></a>
+</td>
+<td>
+   <p>disruption defines how the entire composite group can be disrupted.</p>
+</td>
+</tr>
+<tr><td><code>replicatedJobPolicies</code><br/>
+<a href="#jobset-x-k8s-io-v1alpha2-ReplicatedJobSchedulingPolicy"><code>[]ReplicatedJobSchedulingPolicy</code></a>
+</td>
+<td>
+   <p>replicatedJobPolicies specifies per-ReplicatedJob leaf-level scheduling overrides.
+Each entry targets a named ReplicatedJob.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
 ## `JobSetSpec`     {#jobset-x-k8s-io-v1alpha2-JobSetSpec}
     
 
@@ -395,6 +446,17 @@ the JobSet becomes eligible to be deleted immediately after it finishes.</p>
 to reference. JobSet controller automatically adds the required volume claims to the
 pod template. Every claim in this list must have at least one matching (by name)
 volumeMount in one container in the template.</p>
+</td>
+</tr>
+<tr><td><code>scheduling</code><br/>
+<a href="#jobset-x-k8s-io-v1alpha2-JobSetScheduling"><code>JobSetScheduling</code></a>
+</td>
+<td>
+   <p>scheduling defines the Workload-Aware Scheduling configuration for this JobSet.
+When nil, no scheduling objects are created and behavior is unchanged.
+When set (even to {}), the controller compiles a Workload resource with
+CompositePodGroup and PodGroup objects for the scheduler.
+Requires the WorkloadAwareScheduling feature gate.</p>
 </td>
 </tr>
 </tbody>
@@ -592,6 +654,63 @@ Currently, only a single item is supported in the DependsOn list.
 If JobSet is suspended the all active ReplicatedJobs will be suspended. When JobSet is
 resumed the Job sequence starts again.
 This API is mutually exclusive with the StartupPolicy API.</p>
+</td>
+</tr>
+</tbody>
+</table>
+
+## `ReplicatedJobSchedulingPolicy`     {#jobset-x-k8s-io-v1alpha2-ReplicatedJobSchedulingPolicy}
+    
+
+**Appears in:**
+
+- [JobSetScheduling](#jobset-x-k8s-io-v1alpha2-JobSetScheduling)
+
+
+<p>ReplicatedJobSchedulingPolicy targets a named ReplicatedJob with leaf-level
+scheduling configuration.</p>
+
+
+<table class="table">
+<thead><tr><th width="30%">Field</th><th>Description</th></tr></thead>
+<tbody>
+    
+  
+<tr><td><code>targetReplicatedJob</code> <B>[Required]</B><br/>
+<code>string</code>
+</td>
+<td>
+   <p>targetReplicatedJob is the name of the ReplicatedJob this policy applies to.</p>
+</td>
+</tr>
+<tr><td><code>policy</code><br/>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#podgroupschedulingpolicy-v1alpha3-scheduling"><code>k8s.io/api/scheduling/v1alpha3.PodGroupSchedulingPolicy</code></a>
+</td>
+<td>
+   <p>policy defines the leaf-level scheduling policy (basic or gang) for
+jobs created by this ReplicatedJob.
+Defaults to Gang when not specified.</p>
+</td>
+</tr>
+<tr><td><code>constraints</code><br/>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#podgroupschedulingconstraints-v1alpha3-scheduling"><code>k8s.io/api/scheduling/v1alpha3.PodGroupSchedulingConstraints</code></a>
+</td>
+<td>
+   <p>constraints defines leaf-level topology constraints for this ReplicatedJob's pods.</p>
+</td>
+</tr>
+<tr><td><code>disruption</code><br/>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#disruptionmode-v1alpha3-scheduling"><code>k8s.io/api/scheduling/v1alpha3.DisruptionMode</code></a>
+</td>
+<td>
+   <p>disruption defines how pods within this ReplicatedJob can be disrupted.</p>
+</td>
+</tr>
+<tr><td><code>resourceClaims</code><br/>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#podgroupresourceclaim-v1alpha3-scheduling"><code>[]k8s.io/api/scheduling/v1alpha3.PodGroupResourceClaim</code></a>
+</td>
+<td>
+   <p>resourceClaims specifies dynamic resource claims for this ReplicatedJob's pods.</p>
 </td>
 </tr>
 </tbody>

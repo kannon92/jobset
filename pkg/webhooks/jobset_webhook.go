@@ -26,6 +26,7 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	schedulingv1alpha3 "k8s.io/api/scheduling/v1alpha3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
@@ -154,6 +155,13 @@ func (j *jobSetWebhook) Default(ctx context.Context, js *jobset.JobSet) error {
 			js.Spec.VolumeClaimPolicies[i].RetentionPolicy = &jobset.VolumeRetentionPolicy{
 				WhenDeleted: ptr.To(jobset.RetentionPolicyDelete),
 			}
+		}
+	}
+
+	// Default scheduling policy to Gang when scheduling block is present but policy is nil.
+	if js.Spec.Scheduling != nil && js.Spec.Scheduling.Policy == nil {
+		js.Spec.Scheduling.Policy = &schedulingv1alpha3.PodGroupSchedulingPolicy{
+			Gang: &schedulingv1alpha3.GangSchedulingPolicy{},
 		}
 	}
 
@@ -305,6 +313,9 @@ func (j *jobSetWebhook) ValidateCreate(ctx context.Context, js *jobset.JobSet) (
 		allErrs = append(allErrs, j.validateVolumeClaimPolicies(ctx, js, js.Spec.VolumeClaimPolicies)...)
 	}
 
+	// Validate scheduling configuration.
+	allErrs = append(allErrs, validateScheduling(js, rJobNames)...)
+
 	return nil, invalidError(js.Name, allErrs)
 }
 
@@ -394,6 +405,7 @@ func (j *jobSetWebhook) ValidateUpdate(ctx context.Context, oldJs, newJs *jobset
 	// Note that SucccessPolicy and failurePolicy are made immutable via CEL.
 	errs = append(errs, apivalidation.ValidateImmutableField(mungedSpec.ReplicatedJobs, oldJs.Spec.ReplicatedJobs, field.NewPath("spec").Child("replicatedJobs"))...)
 	errs = append(errs, apivalidation.ValidateImmutableField(newJs.Spec.ManagedBy, oldJs.Spec.ManagedBy, field.NewPath("spec").Child("managedBy"))...)
+	errs = append(errs, apivalidation.ValidateImmutableField(newJs.Spec.Scheduling, oldJs.Spec.Scheduling, field.NewPath("spec").Child("scheduling"))...)
 
 	if len(errs) == 0 {
 		return nil, nil
@@ -692,6 +704,120 @@ func toFieldErrorList(errs []error) field.ErrorList {
 		}
 	}
 	return fieldErrs
+}
+
+func hasSequencedStartupForScheduling(js *jobset.JobSet) bool {
+	if js.Spec.StartupPolicy != nil && js.Spec.StartupPolicy.StartupPolicyOrder == jobset.InOrder {
+		return true
+	}
+	for i := range js.Spec.ReplicatedJobs {
+		if len(js.Spec.ReplicatedJobs[i].DependsOn) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func usesSingleTopLevelPodGroup(js *jobset.JobSet) bool {
+	scheduling := js.Spec.Scheduling
+	if scheduling == nil {
+		return false
+	}
+	if len(scheduling.ReplicatedJobPolicies) > 0 {
+		return false
+	}
+	if hasSequencedStartupForScheduling(js) {
+		return false
+	}
+	if scheduling.Policy == nil {
+		return true
+	}
+	return scheduling.Policy.Gang != nil
+}
+
+// validateScheduling validates the scheduling configuration of a JobSet.
+func validateScheduling(js *jobset.JobSet, rJobNames sets.Set[string]) []error {
+	var allErrs []error
+
+	// If feature gate is disabled, reject any scheduling config.
+	if !features.Enabled(features.WorkloadAwareScheduling) {
+		if js.Spec.Scheduling != nil {
+			allErrs = append(allErrs, field.Forbidden(field.NewPath("spec", "scheduling"), "cannot be set when WorkloadAwareScheduling feature gate is disabled"))
+		}
+		return allErrs
+	}
+
+	if js.Spec.Scheduling == nil {
+		return nil
+	}
+
+	scheduling := js.Spec.Scheduling
+
+	// Validate composite-level policy: exactly one of basic or gang must be set (if policy is specified).
+	if scheduling.Policy != nil {
+		policyPath := field.NewPath("spec", "scheduling", "policy")
+		if scheduling.Policy.Basic != nil && scheduling.Policy.Gang != nil {
+			allErrs = append(allErrs, field.Invalid(policyPath, "", "exactly one of basic or gang must be set"))
+		}
+		if scheduling.Policy.Basic == nil && scheduling.Policy.Gang == nil {
+			allErrs = append(allErrs, field.Invalid(policyPath, "", "one of basic or gang must be set"))
+		}
+		if scheduling.Policy.Gang != nil && scheduling.Policy.Gang.MinCount < 0 {
+			allErrs = append(allErrs, field.Invalid(policyPath.Child("gang", "minCount"), scheduling.Policy.Gang.MinCount, "must be >= 0"))
+		}
+	}
+
+	if hasSequencedStartupForScheduling(js) && len(scheduling.ReplicatedJobPolicies) == 0 &&
+		scheduling.Policy != nil && scheduling.Policy.Gang != nil && scheduling.Policy.Gang.MinCount > 0 {
+		allErrs = append(allErrs, field.Invalid(
+			field.NewPath("spec", "scheduling", "policy", "gang", "minCount"),
+			scheduling.Policy.Gang.MinCount,
+			"cannot be set when DependsOn or InOrder StartupPolicy is used; use per-ReplicatedJob gang policies instead",
+		))
+	}
+
+	if usesSingleTopLevelPodGroup(js) && len(js.Spec.ReplicatedJobs) > 1 {
+		priorityPath := field.NewPath("spec", "replicatedJobs")
+		expected := js.Spec.ReplicatedJobs[0].Template.Spec.Template.Spec.PriorityClassName
+		for i := 1; i < len(js.Spec.ReplicatedJobs); i++ {
+			actual := js.Spec.ReplicatedJobs[i].Template.Spec.Template.Spec.PriorityClassName
+			if actual != expected {
+				allErrs = append(allErrs, field.Invalid(
+					priorityPath.Index(i).Child("template", "spec", "template", "spec", "priorityClassName"),
+					actual,
+					fmt.Sprintf("must match %q when top-level gang scheduling is used", expected),
+				))
+			}
+		}
+	}
+
+	// Validate replicatedJobPolicies.
+	// Note: duplicate targetReplicatedJob entries are already rejected by the API server
+	// because the field uses +listType=map with +listMapKey=targetReplicatedJob.
+	for i, rjPolicy := range scheduling.ReplicatedJobPolicies {
+		fieldPath := field.NewPath("spec", "scheduling", "replicatedJobPolicies").Index(i)
+
+		// Target must reference a valid ReplicatedJob.
+		if !rJobNames.Has(rjPolicy.TargetReplicatedJob) {
+			allErrs = append(allErrs, field.Invalid(fieldPath.Child("targetReplicatedJob"), rjPolicy.TargetReplicatedJob, "does not reference a valid replicatedJob name"))
+		}
+
+		// Validate leaf-level policy.
+		if rjPolicy.Policy != nil {
+			leafPolicyPath := fieldPath.Child("policy")
+			if rjPolicy.Policy.Basic != nil && rjPolicy.Policy.Gang != nil {
+				allErrs = append(allErrs, field.Invalid(leafPolicyPath, "", "exactly one of basic or gang must be set"))
+			}
+			if rjPolicy.Policy.Basic == nil && rjPolicy.Policy.Gang == nil {
+				allErrs = append(allErrs, field.Invalid(leafPolicyPath, "", "one of basic or gang must be set"))
+			}
+			if rjPolicy.Policy.Gang != nil && rjPolicy.Policy.Gang.MinCount < 0 {
+				allErrs = append(allErrs, field.Invalid(leafPolicyPath.Child("gang", "minCount"), rjPolicy.Policy.Gang.MinCount, "must be >= 0"))
+			}
+		}
+	}
+
+	return allErrs
 }
 
 // invalidError converts a list of validation errors into an

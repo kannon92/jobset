@@ -141,7 +141,7 @@ YAML_PROCESSOR_LOG_LEVEL ?= info
 
 .PHONY: update-helm
 update-helm: manifests ## Generate Helm templates from Kustomize manifests.
-	$(GO_CMD) run -modfile=$(PROJECT_DIR)/hack/tools/yaml-processor/go.mod \
+	GOFLAGS=-mod=mod $(GO_CMD) run -modfile=$(PROJECT_DIR)/hack/tools/yaml-processor/go.mod \
 	sigs.k8s.io/kueue/hack/tools/yaml-processor \
 	-zap-log-level=$(YAML_PROCESSOR_LOG_LEVEL) $(PROJECT_DIR)/hack/processing-plan.yaml
 
@@ -427,6 +427,37 @@ test-e2e-kind: manifests kustomize fmt vet envtest ginkgo kind-image-build
 .PHONY: test-e2e-kind-customconfigs
 test-e2e-kind-customconfigs: E2E_TEST_PATH = ./test/e2e/customconfigs/...
 test-e2e-kind-customconfigs: test-e2e-kind
+
+## WAS (Workload-Aware Scheduling) Kind cluster management
+# WAS targets build a Kind node image from Kubernetes main (latest CI build)
+# to ensure scheduling.k8s.io APIs are available.
+WAS_KIND_CLUSTER_NAME ?= was-test
+K8S_MAIN_NODE_IMAGE ?= k8s-main:latest
+
+# WAS requires kind@main for `kind build node-image <tarball-url>` support.
+KIND_SCHEDULING = $(shell pwd)/bin/kind-scheduling
+.PHONY: kind-scheduling
+kind-scheduling: ## Install kind@main for WAS cluster support.
+	@GOBIN=$(PROJECT_DIR)/bin GOFLAGS="" GO111MODULE=on $(GO_CMD) build -o $(KIND_SCHEDULING) sigs.k8s.io/kind@main
+
+.PHONY: kind-k8s-main-image-build
+kind-k8s-main-image-build: kind-scheduling ## Build a Kind node image from Kubernetes main (latest CI build).
+	KIND=$(KIND_SCHEDULING) K8S_MAIN_NODE_IMAGE=$(K8S_MAIN_NODE_IMAGE) \
+	bash -c 'source ./hack/e2e-scheduling-cluster.sh && build_scheduling_node_image'
+
+.PHONY: test-e2e-kind-scheduling
+test-e2e-kind-scheduling: manifests kustomize fmt vet envtest ginkgo kind-image-build kind-k8s-main-image-build ## Run scheduling-specific E2E tests on Kind with WAS feature gates enabled.
+	KIND=$(KIND_SCHEDULING) K8S_MAIN_NODE_IMAGE=$(K8S_MAIN_NODE_IMAGE) KIND_CLUSTER_NAME=$(KIND_CLUSTER_NAME) USE_EXISTING_CLUSTER=$(USE_EXISTING_CLUSTER) ARTIFACTS=$(ARTIFACTS) IMAGE_TAG=$(IMAGE_TAG) ./hack/e2e-scheduling-test.sh
+
+.PHONY: kind-cluster-scheduling
+kind-cluster-scheduling: kustomize kind-image-build kind-k8s-main-image-build ## Create a Kind cluster with WAS feature gates and deploy JobSet.
+	KIND=$(KIND_SCHEDULING) KUSTOMIZE=$(KUSTOMIZE) KIND_CLUSTER_NAME=$(WAS_KIND_CLUSTER_NAME) K8S_MAIN_NODE_IMAGE=$(K8S_MAIN_NODE_IMAGE) IMAGE_TAG=$(IMAGE_TAG) ARTIFACTS=$(ARTIFACTS) \
+	bash -c 'source ./hack/e2e-scheduling-cluster.sh && create_scheduling_cluster && kind_load_image && deploy_scheduling_jobset && verify_scheduling_apis'
+
+.PHONY: kind-cluster-scheduling-delete
+kind-cluster-scheduling-delete: kind-scheduling ## Delete the WAS Kind cluster and collect logs.
+	KIND=$(KIND_SCHEDULING) KIND_CLUSTER_NAME=$(WAS_KIND_CLUSTER_NAME) ARTIFACTS=$(ARTIFACTS) \
+	bash -c 'source ./hack/e2e-scheduling-cluster.sh && delete_scheduling_cluster'
 
 .PHONY: prometheus
 prometheus:

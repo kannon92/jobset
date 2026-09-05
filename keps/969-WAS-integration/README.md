@@ -90,13 +90,13 @@ one `PodGroup` per scheduling template, and maps child Jobs and Pods to those Po
 | User need | Behavior |
 |---|---|
 | Gang-schedule a complete training JobSet | A top-level Gang policy creates one PodGroup whose `minCount` is the total pod count. |
-| Schedule groups independently | A `replicatedJobs` entry creates one PodGroup per targeted ReplicatedJob; Basic, Gang, topology, disruption, and resource-claim settings can be overridden. |
+| Schedule groups independently | A `replicatedJobs` entry creates one PodGroup per targeted ReplicatedJob; Basic, Gang, topology, and disruption settings can be overridden. |
 | Use an independent driver and constrained workers | The driver can use Basic scheduling while workers use a topology-constrained Gang PodGroup. These groups are independent in alpha; there is no composite PodGroup. |
 | Keep existing JobSets unchanged | A JobSet without `spec.scheduling` creates no WAS resources. |
 | Avoid reserving resources for suspended workloads | Suspended JobSets have their Workload and PodGroups deleted; they are recreated on resume. |
 | Combine sequencing with Gang scheduling | `DependsOn` and `InOrder` startup use one PodGroup per ReplicatedJob to avoid deadlock. |
 | Scale an elastic workload | Changes to the represented pod count update the generated Gang `minCount`; other template changes require deleting and recreating the jobset with updated values |
-| Share a DRA claim across a Job's pods | A `resourceClaims` entry on a ReplicatedJob policy is copied to that ReplicatedJob's PodGroup, and each pod references that shared claim explicitly. Pod-level claims such as a per-pod GPU claim remain independent. |
+| Share a DRA claim across a Job's pods | A `resourceClaims` entry in a `JobScheduling` policy is copied to each Job's PodGroup, and each pod references that shared claim explicitly. Pod-level claims such as a per-pod GPU claim remain independent. |
 | Run a TPU multi-slice workload | A JobSet can use a PodGroup per replica and topology constraints to request coordinated placement for TPU slices. The TPU-specific pod resources and topology values remain in the JobSet pod templates. |
 | Recover one failed component | Partial eviction and rescheduling of an individual ReplicatedJob remain future work; alpha restarts follow JobSet's existing group-level semantics. |
 
@@ -219,16 +219,17 @@ is patched in place as the represented pod count changes.
 scheduling:
   replicatedJobs:
     - targetReplicatedJobs: [worker]
-      schedulingPolicy:
-        gang: {}
-      resourceClaims:
-        - name: imex-channel
-          resourceClaimTemplateName: imex-channel-template
+      job:
+        schedulingPolicy:
+          gang: {}
+        resourceClaims:
+          - name: imex-channel
+            resourceClaimTemplateName: imex-channel-template
 ```
 
-Creates: one `Workload`/`PodGroup` for `worker` whose `PodGroup` carries the `resourceClaims`
-entry; each pod in `worker` references the shared claim explicitly, while per-pod claims (for
-example a GPU claim) remain independent.
+Creates: one `Workload` containing one `PodGroup` per `worker` Job replica. Each PodGroup carries
+the `resourceClaims` entry, and each pod in that Job references the shared claim explicitly,
+while per-pod claims (for example a GPU claim) remain independent.
 
 **Run a TPU multi-slice workload**
 
@@ -375,11 +376,11 @@ type JobSetSpec struct {
 // models, since composite Gang-of-Gangs PodGroup hierarchies linking a parent
 // PodGroup to leaf PodGroups are not implemented in alpha:
 //   - the top-level (level 1 / composite) model: set schedulingPolicy,
-//     schedulingConstraints, disruptionMode, and/or resourceClaims to configure a single PodGroup
+//     schedulingConstraints, and/or disruptionMode to configure a single PodGroup
 //     (or, under sequenced startup, one PodGroup per ReplicatedJob) covering the
 //     whole JobSet, and leave replicatedJobs unset.
 //   - the per-ReplicatedJob (level 2 / composite) model: set replicatedJobs and
-//     leave schedulingPolicy, schedulingConstraints, disruptionMode, and resourceClaims unset at
+//     leave schedulingPolicy, schedulingConstraints, and disruptionMode unset at
 //     the top level. Every ReplicatedJob must then be targeted by exactly one
 //     replicatedJobs entry, since there is no top-level policy for an
 //     untargeted ReplicatedJob to fall back to.
@@ -395,24 +396,16 @@ type JobSetScheduling struct {
     // for the entire JobSet.
     // Mutually exclusive with replicatedJobs: see the type-level comment.
     // +optional
-    SchedulingConstraints *schedulingv1alpha3.PodGroupSchedulingConstraints `json:"schedulingConstraints,omitempty"`
+    SchedulingConstraints *schedulingv1alpha3.WorkloadCompositePodGroupSchedulingConstraints `json:"schedulingConstraints,omitempty"`
 
     // disruptionMode defines how the entire composite group (level 1) can be disrupted.
     // Mutually exclusive with replicatedJobs: see the type-level comment.
     // +optional
-    DisruptionMode *schedulingv1alpha3.DisruptionMode `json:"disruptionMode,omitempty"`
-
-    // resourceClaims specifies dynamic resource claims shared by the pods in the
-    // composite group.
-    // Mutually exclusive with replicatedJobs: see the type-level comment.
-    // +optional
-    // +listType=atomic
-    // +kubebuilder:validation:MaxItems=4
-    ResourceClaims []schedulingv1alpha3.PodGroupResourceClaim `json:"resourceClaims,omitempty"`
+    DisruptionMode *schedulingv1alpha3.WorkloadCompositePodGroupDisruptionMode `json:"disruptionMode,omitempty"`
 
     // replicatedJobs specifies per-ReplicatedJob composite-level (level 2)
     // scheduling overrides. Mutually exclusive with the top-level schedulingPolicy,
-    // schedulingConstraints, disruptionMode, and resourceClaims fields: see the type-level comment.
+    // schedulingConstraints, and disruptionMode fields: see the type-level comment.
     // When set, every ReplicatedJob in the JobSet must be targeted by exactly one
     // entry.
     // +optional
@@ -443,25 +436,18 @@ type ReplicatedJobScheduling struct {
     // schedulingConstraints defines composite-level (level 2) topology constraints for
     // the targeted ReplicatedJobs' pods.
     // +optional
-    SchedulingConstraints *schedulingv1alpha3.PodGroupSchedulingConstraints `json:"schedulingConstraints,omitempty"`
+    SchedulingConstraints *schedulingv1alpha3.WorkloadCompositePodGroupSchedulingConstraints `json:"schedulingConstraints,omitempty"`
 
     // disruptionMode defines how pods within the targeted ReplicatedJobs can be disrupted.
     // +optional
-    DisruptionMode *schedulingv1alpha3.DisruptionMode `json:"disruptionMode,omitempty"`
-
-    // resourceClaims specifies dynamic resource claims shared by the targeted
-    // ReplicatedJobs' pods.
-    // +optional
-    // +listType=atomic
-    // +kubebuilder:validation:MaxItems=4
-    ResourceClaims []schedulingv1alpha3.PodGroupResourceClaim `json:"resourceClaims,omitempty"`
+    DisruptionMode *schedulingv1alpha3.WorkloadCompositePodGroupDisruptionMode `json:"disruptionMode,omitempty"`
 
     // job defines job-level (replica-level / level 3) scheduling
     // configuration, where each replica of the targeted ReplicatedJobs forms its
     // own independent gang (i.e. one PodGroup per Job) instead of sharing a single
     // PodGroup across every replica. This is part of the Gang-of-Gangs model. When
     // set, targetReplicatedJobs must contain exactly one ReplicatedJob name, and the
-    // composite-level schedulingPolicy/schedulingConstraints/disruptionMode/resourceClaims
+    // composite-level schedulingPolicy, schedulingConstraints, and disruptionMode
     // fields on this ReplicatedJobScheduling must not be set, since they
     // configure a shared PodGroup that the job field replaces with one
     // PodGroup per Job.
@@ -479,13 +465,14 @@ type JobScheduling struct {
     // +optional
     SchedulingPolicy *schedulingv1alpha3.WorkloadPodGroupSchedulingPolicy `json:"schedulingPolicy,omitempty"`
     // +optional
-    SchedulingConstraints *schedulingv1alpha3.PodGroupSchedulingConstraints `json:"schedulingConstraints,omitempty"`
+    SchedulingConstraints *schedulingv1alpha3.WorkloadPodGroupSchedulingConstraints `json:"schedulingConstraints,omitempty"`
     // +optional
-    DisruptionMode *schedulingv1alpha3.DisruptionMode `json:"disruptionMode,omitempty"`
+    DisruptionMode *schedulingv1alpha3.WorkloadPodGroupDisruptionMode `json:"disruptionMode,omitempty"`
+    // resourceClaims defines claims shared by all pods in each Job's PodGroup.
     // +optional
     // +listType=atomic
     // +kubebuilder:validation:MaxItems=4
-    ResourceClaims []schedulingv1alpha3.PodGroupResourceClaim `json:"resourceClaims,omitempty"`
+    ResourceClaims []schedulingv1alpha3.WorkloadPodGroupResourceClaim `json:"resourceClaims,omitempty"`
 }
 ```
 
@@ -558,8 +545,8 @@ When the feature is enabled and `spec.scheduling` is non-nil:
    own WorkloadItem and PodGroup instead of sharing one PodGroup across the whole ReplicatedJob,
    so replicas can be gang-scheduled and preempted independently and can carry per-replica
    resource claims. `job` requires `targetReplicatedJobs` to name exactly one
-   ReplicatedJob, and is mutually exclusive with the leaf-level `schedulingPolicy`,
-   `schedulingConstraints`, `disruptionMode`, and `resourceClaims` fields on the same entry.
+   ReplicatedJob, and is mutually exclusive with the composite-level `schedulingPolicy`,
+   `schedulingConstraints`, and `disruptionMode` fields on the same entry.
 4. Each WorkloadItem is compiled with `workloadbuilder`. Because the current builder supports
    only single-item trees, per-ReplicatedJob and per-Job templates are merged into one Workload.
 5. The controller creates one PodGroup for each resulting template and sets the JobSet as the
@@ -753,9 +740,9 @@ resource changes.
       overflow independently of the JobSet's own name, which is already bounded by JobSet
       admission.
   - Gang `minCount` patched in place when ElasticJobSet scaling changes parallelism.
-  - DRA `resourceClaims` propagation from a `ReplicatedJobScheduling` to per-RJ PodGroups,
-    including direct `ResourceClaimName` references, multiple claims on one PodGroup, and
-    preservation across a suspend-resume cycle.
+  - DRA `resourceClaims` propagation from `JobScheduling` to per-Job PodGroups, including
+    direct `ResourceClaimName` references, multiple claims on one PodGroup, and preservation
+    across a suspend-resume cycle.
   - Feature-gate-disabled behavior: no scheduling objects created, and reconciliation skipped even
     when `spec.scheduling` is set (the webhook is expected to have already rejected it).
 - **E2E** (`test/e2e/scheduling/scheduling_test.go`, run via `make test-e2e-kind-scheduling` on a
